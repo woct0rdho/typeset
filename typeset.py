@@ -339,33 +339,33 @@ def correct_ch_period(string):
 
 def correct_ch_quote(string):
     if ch_quote == 'curly':
-        string = string.replace('『', '“')
-        string = string.replace('』', '”')
-        string = string.replace('「', '‘')
-        string = string.replace('」', '’')
+        string = string.replace('「', '“')
+        string = string.replace('」', '”')
+        string = string.replace('『', '‘')
+        string = string.replace('』', '’')
     elif ch_quote == 'rect':
-        string = string.replace('“', '『')
-        string = string.replace('”', '』')
-        string = string.replace('‘', '「')
-        string = string.replace('’', '」')
+        string = string.replace('“', '「')
+        string = string.replace('”', '」')
+        string = string.replace('‘', '『')
+        string = string.replace('’', '』')
     elif ch_quote == 'straight':
         string = string.replace('“', ' "')
         string = string.replace('”', '" ')
         string = string.replace('‘', ' \'')
         string = string.replace('’', '\' ')
-        string = string.replace('『', ' "')
-        string = string.replace('』', '" ')
-        string = string.replace('「', ' \'')
-        string = string.replace('」', '\' ')
+        string = string.replace('「', ' "')
+        string = string.replace('」', '" ')
+        string = string.replace('『', ' \'')
+        string = string.replace('』', '\' ')
     elif ch_quote == 'tex':
         string = string.replace('“', ' ``')
         string = string.replace('”', '\'\' ')
         string = string.replace('‘', ' `')
         string = string.replace('’', '\' ')
-        string = string.replace('『', ' ``')
-        string = string.replace('』', '\'\' ')
-        string = string.replace('「', ' `')
-        string = string.replace('」', '\' ')
+        string = string.replace('「', ' ``')
+        string = string.replace('」', '\'\' ')
+        string = string.replace('『', ' `')
+        string = string.replace('』', '\' ')
     return string
 
 
