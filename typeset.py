@@ -1,15 +1,34 @@
+import argparse
 import codecs
+import re
 import sys
 
-encoding = 'utf-8'
-eol = '\n'
-comment_mark = '\\%'
-# my_space = '{\\myspace}'
-my_space = ''
-zh_period = 'empty'  # free | empty | dot | en_dot
-zh_quote = 'curly'  # free | curly | rect | straight | tex
-tex_quote = False
-guess_lang_window = 4
+parser = argparse.ArgumentParser()
+parser.add_argument('-i', '--in_filename', type=str, default='')
+parser.add_argument('-o', '--out_filename', type=str, default='')
+parser.add_argument('--in_encoding', type=str, default='utf-8')
+parser.add_argument('--out_encoding', type=str, default='utf-8')
+parser.add_argument('--eol', type=str, default='\n')
+parser.add_argument('--max_eol', type=int, default=2)
+parser.add_argument('--comment_mark', type=str, default='')
+parser.add_argument('--minor_space', type=str, default='')
+parser.add_argument('--tex_quote', type=bool, default=False)
+parser.add_argument(
+    '--zh_period',
+    type=str,
+    default='empty',
+    choices=['free', 'empty', 'dot', 'en_dot'])
+parser.add_argument(
+    '--zh_quote',
+    type=str,
+    default='curly',
+    choices=['free', 'curly', 'rect', 'straight', 'tex'])
+parser.add_argument('--guess_lang_window', type=int, default=4)
+
+# Export parameters to global
+args = parser.parse_args()
+for key in sorted(vars(args)):
+    globals()[key] = getattr(args, key)
 
 
 def zh_letter(c):
@@ -92,7 +111,8 @@ def correct_space(s):
         (digit, zh_letter),
         (letter, en_l_punc),
         (en_r_punc, letter),
-        (en_r_punc, en_l_punc), )
+        (en_r_punc, en_l_punc),
+    )
 
     remove_space_type = (
         (zh_letter, zh_letter),
@@ -105,7 +125,8 @@ def correct_space(s):
         (en_r_punc, en_r_punc),
         (en_l_punc, en_r_punc),
         (zh_punc, en_punc),
-        (en_punc, zh_punc), )
+        (en_punc, zh_punc),
+    )
 
     clist = list(s)
     for i in range(len(clist) - 1):
@@ -173,8 +194,8 @@ def correct_punc(s):
                     clist[i] = '（'
                     if clist[i - 1] == ' ':
                         clist[i - 1] = ''
-                elif clist[i] == ')' and i < len(clist) - 2 and (
-                        zh_letter(clist[i + 2]) or zh_punc(clist[i + 2])):
+                elif clist[i] == ')' and i < len(clist) - 2 and (zh_letter(
+                        clist[i + 2]) or zh_punc(clist[i + 2])):
                     clist[i] = '）'
                     if clist[i + 1] == ' ':
                         clist[i + 1] = ''
@@ -243,8 +264,8 @@ def correct_punc(s):
                     clist[i] = ' ('
                     if clist[i - 1] == ' ':
                         clist[i - 1] = ''
-                elif clist[i] == '）' and i < len(clist) - 2 and (
-                        zh_letter(clist[i + 2]) or zh_punc(clist[i + 2])):
+                elif clist[i] == '）' and i < len(clist) - 2 and (zh_letter(
+                        clist[i + 2]) or zh_punc(clist[i + 2])):
                     clist[i] = ')'
                     if clist[i + 1] == ' ':
                         clist[i + 1] = ''
@@ -309,19 +330,20 @@ def correct_punc(s):
     return ''.join(clist).strip()
 
 
-def correct_my_space(s):
-    my_space_type = (
+def correct_minor_space(s):
+    minor_space_type = (
         (zh_letter, en_letter),
         (en_letter, zh_letter),
         (zh_letter, digit),
-        (digit, zh_letter), )
+        (digit, zh_letter),
+    )
 
     clist = list(s)
     for i in range(1, len(clist) - 1):
         if clist[i] == ' ':
-            for l_type, r_type in my_space_type:
+            for l_type, r_type in minor_space_type:
                 if l_type(clist[i - 1]) and r_type(clist[i + 1]):
-                    clist[i] = my_space
+                    clist[i] = minor_space
                     break
     return ''.join(clist).strip()
 
@@ -369,35 +391,43 @@ def correct_zh_quote(s):
     return s
 
 
-def parse_line(s):
-    res = ' '.join(s.split())
-    if res == '':
-        return eol
-    if res[0] in comment_mark:
-        return s
-    res = correct_full_width(res)
-    res = correct_space(res)
-    res = correct_punc(res)
-    res = correct_space(res)
-    res = correct_punc(res)
-    res = correct_my_space(res)
-    res = correct_zh_period(res)
-    res = correct_zh_quote(res)
-    res += eol
+def parse_text(s):
+    if not s:
+        return ''
+
+    res = ''
+    for line in s.splitlines():
+        if line and line[0] in comment_mark:
+            res += line + eol
+            continue
+
+        res_line = ' '.join(line.split())
+        if res_line == '':
+            res += eol
+            continue
+
+        res_line = correct_full_width(res_line)
+        res_line = correct_space(res_line)
+        res_line = correct_punc(res_line)
+        res_line = correct_space(res_line)
+        res_line = correct_punc(res_line)
+        res_line = correct_minor_space(res_line)
+        res_line = correct_zh_period(res_line)
+        res_line = correct_zh_quote(res_line)
+        res += res_line + eol
+    res = re.compile(eol * max_eol + eol + '+').sub(eol * max_eol, res)
     return res
 
 
-def parse_file(filename):
-    f = codecs.open(filename, 'r', encoding)
-    g = codecs.open(filename + '.out', 'w', encoding)
-    for line in f:
-        g.write(parse_line(line))
-    f.close()
-    g.close()
-
-
 if __name__ == '__main__':
-    if len(sys.argv) == 2:
-        parse_file(sys.argv[1])
+    if in_filename:
+        with codecs.open(in_filename, 'r', in_encoding) as f:
+            s = f.read()
     else:
-        print('Usage: python typeset.py <filename>')
+        s = sys.stdin.read()
+    s = parse_text(s)
+    if out_filename:
+        with codecs.open(out_filename, 'w', out_encoding) as g:
+            g.write(s)
+    else:
+        print(s)
