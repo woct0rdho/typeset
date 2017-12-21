@@ -2,28 +2,70 @@ import argparse
 import codecs
 import re
 import sys
+from distutils.util import strtobool
+
+
+def streval(s):
+    return eval('\'{}\''.format(s))
+
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-i', '--in_filename', type=str, default='')
-parser.add_argument('-o', '--out_filename', type=str, default='')
-parser.add_argument('--in_encoding', type=str, default='utf-8')
-parser.add_argument('--out_encoding', type=str, default='utf-8')
-parser.add_argument('--eol', type=str, default='\n')
-parser.add_argument('--max_eol', type=int, default=2)
-parser.add_argument('--comment_mark', type=str, default='')
-parser.add_argument('--minor_space', type=str, default='')
-parser.add_argument('--tex_quote', type=bool, default=False)
+parser.add_argument(
+    '-i',
+    '--in_filename',
+    type=str,
+    default='',
+    help='input filename, use stdin if omitted')
+parser.add_argument(
+    '-o',
+    '--out_filename',
+    type=str,
+    default='',
+    help='output filename, use stdout if omitted')
+parser.add_argument(
+    '--in_encoding', type=str, default='utf-8', help='input encoding')
+parser.add_argument(
+    '--out_encoding', type=str, default='utf-8', help='output encoding')
+parser.add_argument(
+    '--eol', type=streval, default='\\n', help='mark for end of line')
+parser.add_argument(
+    '--max_eol',
+    type=int,
+    default=2,
+    help='maximal number of successive EOL\'s')
+parser.add_argument(
+    '--comment_mark',
+    type=str,
+    default='',
+    help=
+    'mark for comment at the beginning of a line, this line will not be modified'
+)
+parser.add_argument(
+    '--minor_space', type=str, default='', help='mark for minor seperation')
+parser.add_argument(
+    '--tex_quote',
+    type=strtobool,
+    default=False,
+    help='change quote marks to TeX format')
 parser.add_argument(
     '--zh_period',
     type=str,
     default='empty',
-    choices=['free', 'empty', 'dot', 'en_dot'])
+    choices=['free', 'empty', 'dot', 'en_dot'],
+    help='format for Chinese period')
 parser.add_argument(
     '--zh_quote',
     type=str,
     default='curly',
-    choices=['free', 'curly', 'rect', 'straight', 'tex'])
-parser.add_argument('--guess_lang_window', type=int, default=4)
+    choices=['free', 'curly', 'rect', 'straight', 'tex'],
+    help='format for Chinese quote mark')
+parser.add_argument(
+    '--guess_lang_window',
+    type=int,
+    default=4,
+    help=
+    'number of characters at the beginning and the end of a line to guess the language of this line'
+)
 
 # Export parameters to global
 args = parser.parse_args()
@@ -397,7 +439,7 @@ def parse_text(s):
 
     res = ''
     for line in s.splitlines():
-        if line and line[0] in comment_mark:
+        if line and line.startswith(comment_mark):
             res += line + eol
             continue
 
