@@ -439,7 +439,7 @@ def parse_text(s):
 
     res = ''
     for line in s.splitlines():
-        if line and line.startswith(comment_mark):
+        if line and comment_mark and line.startswith(comment_mark):
             res += line + eol
             continue
 
