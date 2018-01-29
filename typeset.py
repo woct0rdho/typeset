@@ -1,12 +1,19 @@
 import argparse
+import chardet
 import codecs
 import re
 import sys
 from distutils.util import strtobool
 
 
-def streval(s):
-    return eval('\'{}\''.format(s))
+def str_escape(s):
+    s = s.replace('\\\\', '\\')
+    s = s.replace('\\\'', '\'')
+    s = s.replace('\\"', '"')
+    s = s.replace('\\n', '\n')
+    s = s.replace('\\r', '\r')
+    s = s.replace('\\t', '\t')
+    return s
 
 
 parser = argparse.ArgumentParser()
@@ -23,11 +30,14 @@ parser.add_argument(
     default='',
     help='output filename, use stdout if omitted')
 parser.add_argument(
-    '--in_encoding', type=str, default='utf-8', help='input encoding')
+    '--in_encoding',
+    type=str,
+    default='',
+    help='input encoding, empty for auto detect')
 parser.add_argument(
     '--out_encoding', type=str, default='utf-8', help='output encoding')
 parser.add_argument(
-    '--eol', type=streval, default='\\n', help='mark for end of line')
+    '--eol', type=str_escape, default='\\n', help='mark for end of line')
 parser.add_argument(
     '--max_eol',
     type=int,
@@ -67,7 +77,7 @@ parser.add_argument(
     'number of characters at the beginning and the end of a line to guess the language of this line'
 )
 
-# Export parameters to global
+# Export parameters to global namespace
 args = parser.parse_args()
 for key in sorted(vars(args)):
     globals()[key] = getattr(args, key)
@@ -198,8 +208,7 @@ def guess_lang(s):
     zh_count = 0
     en_count = 0
     for k in [
-            k
-            for ran in [
+            k for ran in [
                 range(i, min(i + guess_lang_window, j)),
                 range(max(j - guess_lang_window, i), j)
             ] for k in ran
@@ -463,6 +472,10 @@ def parse_text(s):
 
 if __name__ == '__main__':
     if in_filename:
+        if not in_encoding:
+            with open(in_filename, 'rb') as f:
+                raw = f.read()
+            in_encoding = chardet.detect(raw)['encoding']
         with codecs.open(in_filename, 'r', in_encoding) as f:
             s = f.read()
     else:
