@@ -3,6 +3,7 @@ import chardet
 import codecs
 import re
 import sys
+import unicodedata
 from distutils.util import strtobool
 
 
@@ -33,7 +34,7 @@ parser.add_argument(
     '--in_encoding',
     type=str,
     default='',
-    help='input encoding, empty for auto detect')
+    help='input encoding, auto detect if omitted')
 parser.add_argument(
     '--out_encoding', type=str, default='utf-8', help='output encoding')
 parser.add_argument(
@@ -48,7 +49,7 @@ parser.add_argument(
     type=str,
     default='',
     help=
-    'mark for comment at the beginning of a line, this line will not be modified'
+    'if this mark appears at the beginning of a line, this line will not be modified'
 )
 parser.add_argument(
     '--minor_space', type=str, default='', help='mark for minor seperation')
@@ -150,6 +151,7 @@ def correct_full_width(s):
 
     for i in range(len(full)):
         s = s.replace(full[i], half[i])
+
     return s
 
 
@@ -192,6 +194,7 @@ def correct_space(s):
                     if l_type(clist[i - 1]) and r_type(clist[i + 1]):
                         clist[i] = ''
                         break
+
     return ''.join(clist).strip()
 
 
@@ -378,6 +381,7 @@ def correct_punc(s):
                     clist[j] = ' ('
                     if j > 0 and clist[j - 1] == ' ':
                         clist[j - 1] = ''
+
     return ''.join(clist).strip()
 
 
@@ -396,6 +400,7 @@ def correct_minor_space(s):
                 if l_type(clist[i - 1]) and r_type(clist[i + 1]):
                     clist[i] = minor_space
                     break
+
     return ''.join(clist).strip()
 
 
@@ -448,25 +453,34 @@ def parse_text(s):
 
     res = ''
     for line in s.splitlines():
-        if line and comment_mark and line.startswith(comment_mark):
-            res += line + eol
-            continue
+        res_line = ' '.join(line.strip().split())
 
-        res_line = ' '.join(line.split())
-        if res_line == '':
+        if not res_line:
             res += eol
             continue
 
+        if comment_mark and res_line.startswith(comment_mark):
+            res += line + eol
+            continue
+
+        res_line = unicodedata.normalize('NFKC', res_line)
         res_line = correct_full_width(res_line)
-        res_line = correct_space(res_line)
-        res_line = correct_punc(res_line)
-        res_line = correct_space(res_line)
-        res_line = correct_punc(res_line)
+
+        while True:
+            last_res_line = res_line
+            res_line = correct_space(res_line)
+            res_line = correct_punc(res_line)
+            if res_line == last_res_line:
+                break
+
         res_line = correct_minor_space(res_line)
         res_line = correct_zh_period(res_line)
         res_line = correct_zh_quote(res_line)
+
         res += res_line + eol
+
     res = re.compile(eol * max_eol + eol + '+').sub(eol * max_eol, res)
+
     return res
 
 
