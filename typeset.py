@@ -106,7 +106,7 @@ def zh_r_punc(c):
 
 
 def zh_m_punc(c):
-    return c in '·～—'
+    return c in '·～—…'
 
 
 def zh_quote(c):
