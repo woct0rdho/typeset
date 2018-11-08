@@ -1,10 +1,11 @@
 import argparse
-import chardet
 import codecs
 import re
 import sys
 import unicodedata
 from distutils.util import strtobool
+
+import chardet
 
 
 def str_escape(s):
@@ -53,10 +54,7 @@ parser.add_argument(
     'if this mark appears at the beginning of a line (with leading spaces), the line will not be modified'
 )
 parser.add_argument(
-    '--minor_space',
-    type=str_escape,
-    default='',
-    help='mark for minor spaces')
+    '--minor_space', type=str_escape, default='', help='mark for minor spaces')
 parser.add_argument(
     '--tex_quote',
     type=strtobool,
@@ -442,7 +440,7 @@ def correct_quote_zh(s):
     quote_state = 0
     quote_state_2 = 0
     for i in range(len(s)):
-        if s[i] in '"“”':
+        if s[i] and s[i] in '"“”':
             if quote_state == 0:
                 s[i] = '“'
                 quote_state = 1
@@ -453,7 +451,7 @@ def correct_quote_zh(s):
                 s[i - 1] = ''
             if i < len(s) - 1 and s[i + 1] == ' ':
                 s[i + 1] = ''
-        elif s[i] in '‘’':
+        elif s[i] and s[i] in '‘’':
             if quote_state_2 == 0:
                 s[i] = '‘'
                 quote_state_2 = 1
@@ -473,7 +471,7 @@ def correct_quote_en(s):
     s = list(s)
     quote_state = 0
     for i in range(len(s)):
-        if s[i] in '"“”':
+        if s[i] and s[i] in '"“”':
             if quote_state == 0:
                 if tex_quote:
                     s[i] = '``'
@@ -511,14 +509,14 @@ def correct_ellipsis(s, ellipsis):
 
     s = list(s)
     for i in range(len(s)):
-        if s[i] in ellipsis_list:
+        if s[i] and s[i] in ellipsis_list:
             if s[i] == '…':
                 ellipsis_count = 3
             else:
                 ellipsis_count = 1
             j = i + 1
             while j < len(s):
-                if s[j] in ellipsis_list:
+                if s[j] and s[j] in ellipsis_list:
                     if s[j] == '…':
                         ellipsis_count += 3
                     else:
@@ -584,9 +582,6 @@ def parse_text(s):
 
     res = ''
     for line in s.splitlines():
-        # print(line)
-        # input()
-
         res_line = ' '.join(line.strip().split())
 
         if not res_line:
