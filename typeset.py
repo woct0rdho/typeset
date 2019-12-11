@@ -107,7 +107,7 @@ def zh_m_punc(c):
     return c in '·～—…'
 
 
-def zh_quote_punc(c):
+def zh_quote(c):
     return c in '“‘「『”’」』'
 
 
@@ -116,7 +116,7 @@ def zh_punc(c):
 
 
 def zh_char(c):
-    return zh_letter(c) or zh_punc(c) or zh_quote_punc(c)
+    return zh_letter(c) or zh_punc(c) or zh_quote(c)
 
 
 def en_letter(c):
