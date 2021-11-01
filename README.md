@@ -42,4 +42,4 @@ https://github.com/sparanoid/chinese-copywriting-guidelines
 https://github.com/ricoa/copywriting-correct
 
 # 示例
-https://github.com/martinwu42/read-matrix 使用本项目排版
+https://github.com/woct0rdho/read-matrix 使用本项目排版
