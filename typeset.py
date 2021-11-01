@@ -1,9 +1,7 @@
 import argparse
-import codecs
 import re
 import sys
 import unicodedata
-from distutils.util import strtobool
 
 import chardet
 
@@ -25,70 +23,85 @@ parser.add_argument(
     '--in_filename',
     type=str,
     default='',
-    help='input filename, use stdin if omitted')
+    help='input filename, use stdin if omitted',
+)
 parser.add_argument(
     '-o',
     '--out_filename',
     type=str,
     default='',
-    help='output filename, use stdout if omitted')
+    help='output filename, use stdout if omitted',
+)
 parser.add_argument(
     '--in_encoding',
     type=str,
     default='',
-    help='input encoding, auto detect if omitted')
+    help='input encoding, auto detect if omitted',
+)
 parser.add_argument(
-    '--out_encoding', type=str, default='utf-8', help='output encoding')
+    '--out_encoding',
+    type=str,
+    default='',
+    help='output encoding, defaults to the same as input encoding',
+)
 parser.add_argument(
-    '--eol', type=str_escape, default='\\n', help='mark for end of line')
+    '--eol',
+    type=str_escape,
+    default='\\n',
+    help='mark for end of line',
+)
 parser.add_argument(
     '--max_eol',
     type=int,
     default=2,
-    help='maximal number of successive EOL\'s')
+    help='maximal number of successive EOL\'s',
+)
 parser.add_argument(
     '--comment_mark',
     type=str,
     default='',
     help=
-    'if this mark appears at the beginning of a line (with leading spaces), the line will not be modified'
+    'if this mark appears at the beginning of a line (with leading spaces), the line will not be modified',
 )
 parser.add_argument(
-    '--minor_space', type=str_escape, default='', help='mark for minor spaces')
+    '--minor_space',
+    type=str_escape,
+    default='',
+    help='mark for minor spaces',
+)
 parser.add_argument(
     '--tex_quote',
-    type=strtobool,
-    default=False,
-    help='change quote marks to TeX format')
+    action='store_true',
+    help='change quote marks to TeX format',
+)
 parser.add_argument(
     '--zh_period',
     type=str,
     default='empty',
     choices=['free', 'empty', 'dot', 'en_dot'],
-    help='format for Chinese periods')
+    help='format for Chinese periods',
+)
 parser.add_argument(
     '--zh_quote',
     type=str,
     default='curly',
     choices=['free', 'curly', 'rect', 'straight', 'tex'],
-    help='format for Chinese quote marks')
+    help='format for Chinese quote marks',
+)
 parser.add_argument(
     '--guess_lang_window',
     type=int,
     default=4,
     help=
-    'number of characters at the beginning and the end of a line to guess the language of the line'
+    'number of characters at the beginning and the end of a line to guess the language of the line',
 )
 parser.add_argument(
     '--normalize_unicode',
-    type=strtobool,
-    default=False,
-    help='normalize unicode')
+    action='store_true',
+    help='normalize unicode',
+)
 
-# Export parameters to global namespace
 args = parser.parse_args()
-for key in sorted(vars(args)):
-    globals()[key] = getattr(args, key)
 
 
 def zh_letter(c):
@@ -229,7 +242,7 @@ def correct_space(s):
 
     s = list(s)
     for i in range(len(s) - 1):
-        if s[i] == ' ':  # i > 0
+        if s[i] == ' ':    # i > 0
             for l_type, r_type in remove_space_type:
                 if l_type(s[i - 1]) and r_type(s[i + 1]):
                     s[i] = ''
@@ -256,7 +269,7 @@ def correct_minor_space(s):
     for i in range(len(s) - 1):
         for l_type, r_type in minor_space_type:
             if l_type(s[i]) and r_type(s[i + 1]):
-                s[i] += minor_space
+                s[i] += args.minor_space
                 break
 
     s = ''.join(s).strip()
@@ -277,8 +290,8 @@ def guess_lang(s):
     en_count = 0
     for k in [
             k for ran in [
-                range(i, min(i + guess_lang_window, j)),
-                range(max(j - guess_lang_window, i), j)
+                range(i, min(i + args.guess_lang_window, j)),
+                range(max(j - args.guess_lang_window, i), j)
             ] for k in ran
     ]:
         if zh_letter(s[k]):
@@ -444,7 +457,7 @@ def correct_quote_zh(s):
             if quote_state == 0:
                 s[i] = '“'
                 quote_state = 1
-            else:  # quote_state == 1
+            else:    # quote_state == 1
                 s[i] = '”'
                 quote_state = 0
             if i > 0 and s[i - 1] == ' ':
@@ -455,7 +468,7 @@ def correct_quote_zh(s):
             if quote_state_2 == 0:
                 s[i] = '‘'
                 quote_state_2 = 1
-            else:  # quote_state_2 == 1
+            else:    # quote_state_2 == 1
                 s[i] = '’'
                 quote_state_2 = 0
             if i > 0 and s[i - 1] == ' ':
@@ -473,7 +486,7 @@ def correct_quote_en(s):
     for i in range(len(s)):
         if s[i] and s[i] in '"“”':
             if quote_state == 0:
-                if tex_quote:
+                if args.tex_quote:
                     s[i] = '``'
                 else:
                     s[i] = '"'
@@ -482,8 +495,8 @@ def correct_quote_en(s):
                 if i < len(s) - 1 and s[i + 1] == ' ':
                     s[i + 1] = ''
                 quote_state = 1
-            else:  # quote_state == 1
-                if tex_quote:
+            else:    # quote_state == 1
+                if args.tex_quote:
                     s[i] = '\'\''
                 else:
                     s[i] = '"'
@@ -493,7 +506,7 @@ def correct_quote_en(s):
                     s[i] += ' '
                 quote_state = 0
         elif s[i] == '‘':
-            if tex_quote:
+            if args.tex_quote:
                 s[i] = ' `'
             else:
                 s[i] = ' \''
@@ -534,11 +547,11 @@ def correct_ellipsis(s, ellipsis):
 
 
 def correct_zh_period(s):
-    if zh_period == 'empty':
+    if args.zh_period == 'empty':
         s = s.replace('．', '。')
-    elif zh_period == 'dot':
+    elif args.zh_period == 'dot':
         s = s.replace('。', '．')
-    elif zh_period == 'en_dot':
+    elif args.zh_period == 'en_dot':
         s = s.replace('。', '. ')
         s = s.replace('．', '. ')
     return s
@@ -585,14 +598,14 @@ def parse_text(s):
         res_line = ' '.join(line.strip().split())
 
         if not res_line:
-            res += eol
+            res += args.eol
             continue
 
-        if comment_mark and res_line.startswith(comment_mark):
-            res += line + eol
+        if args.comment_mark and res_line.startswith(args.comment_mark):
+            res += line + args.eol
             continue
 
-        if normalize_unicode:
+        if args.normalize_unicode:
             res_line = unicodedata.normalize('NFKC', res_line)
 
         res_line = correct_full_width(res_line)
@@ -607,7 +620,7 @@ def parse_text(s):
                 res_line = correct_ellipsis(res_line, '……')
                 if res_line == last_res_line:
                     break
-        else:  # lang == 'en'
+        else:    # lang == 'en'
             while True:
                 last_res_line = res_line
                 res_line = correct_space(res_line)
@@ -621,25 +634,34 @@ def parse_text(s):
         res_line = correct_zh_period(res_line)
         res_line = correct_zh_quote(res_line)
 
-        res += res_line + eol
+        res += res_line + args.eol
 
-    res = re.compile(eol * max_eol + eol + '+').sub(eol * max_eol, res)
+    res = re.compile(args.eol * (args.max_eol + 1) + '+').sub(
+        args.eol * args.max_eol, res)
     return res
 
 
-if __name__ == '__main__':
-    if in_filename:
-        if not in_encoding:
-            with open(in_filename, 'rb') as f:
+def main():
+    if args.in_filename:
+        if not args.in_encoding:
+            with open(args.in_filename, 'rb') as f:
                 raw = f.read()
-            in_encoding = chardet.detect(raw)['encoding']
-        with codecs.open(in_filename, 'r', in_encoding) as f:
+            args.in_encoding = chardet.detect(raw)['encoding']
+        with open(args.in_filename, 'r', encoding=args.in_encoding) as f:
             s = f.read()
     else:
         s = sys.stdin.read()
+
     s = parse_text(s)
-    if out_filename:
-        with codecs.open(out_filename, 'w', out_encoding) as g:
+
+    if args.out_filename:
+        if not args.out_encoding:
+            args.out_encoding = args.in_encoding
+        with open(args.out_filename, 'w', encoding=args.out_encoding) as g:
             g.write(s)
     else:
         print(s)
+
+
+if __name__ == '__main__':
+    main()
