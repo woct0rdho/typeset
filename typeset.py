@@ -558,17 +558,17 @@ def correct_zh_period(s):
 
 
 def correct_zh_quote(s):
-    if zh_quote == 'curly':
+    if args.zh_quote == 'curly':
         s = s.replace('「', '“')
         s = s.replace('」', '”')
         s = s.replace('『', '‘')
         s = s.replace('』', '’')
-    elif zh_quote == 'rect':
+    elif args.zh_quote == 'rect':
         s = s.replace('“', '「')
         s = s.replace('”', '」')
         s = s.replace('‘', '『')
         s = s.replace('’', '』')
-    elif zh_quote == 'straight':
+    elif args.zh_quote == 'straight':
         s = s.replace('“', ' "')
         s = s.replace('”', '" ')
         s = s.replace('‘', ' \'')
@@ -577,7 +577,7 @@ def correct_zh_quote(s):
         s = s.replace('」', '" ')
         s = s.replace('『', ' \'')
         s = s.replace('』', '\' ')
-    elif zh_quote == 'tex':
+    elif args.zh_quote == 'tex':
         s = s.replace('“', ' ``')
         s = s.replace('”', '\'\' ')
         s = s.replace('‘', ' `')
